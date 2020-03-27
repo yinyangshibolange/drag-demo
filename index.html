@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans">
+<head>
+	<meta charset="utf-8">
+	<title>drag-demo</title>
+	<script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js" integrity="sha256-VeNaFBVDhoX3H+gJ37DpT/nTuZTdjYro9yBruHjVmoQ=" crossorigin="anonymous"></script>
+	<style>
+		.head {
+			position: relative;
+			height: 50px;
+			border: 1px solid #bebdbd;
+			box-sizing: border-box;
+		}
+
+		.head .list {
+			position: absolute;
+			display: none;
+			top: 50px;
+			z-index: 3;
+			background: #fff;
+		}
+
+		  .head .list > a {
+		  	display: block;
+		  	padding: 10px;
+		  }
+
+		.rela {
+		  position: relative;
+		  background: #e08282;
+		  box-shadow: 2px 2px 0 #ccc, -2px 2px 0 #ccc, 2px -2px 0 #ccc, -2px -2px 0 #ccc;
+		  box-sizing: border-box;
+		}
+
+		.rela .panel {
+		    position: absolute;
+		  }
+
+		  .rela  .pan-chart {
+		    position: absolute;
+		    width: 120px;
+		    height: 80px;
+		  }
+
+			.lista {
+				display: inline-block;
+			}
+
+			.listb {
+				display: inline-block;
+				margin-left: 100px;
+			}
+
+			.clearfix::after {
+				content: '\20';
+				clear: both;
+				height: 0;
+				display: block;
+			}
+			.clearfix {
+				zoom: 1;
+			}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="head">
+			<div>
+				<a id="trig">trigg</a>
+			</div>
+			<div id="list" class="list clearfix">
+				<a id="lista" class="lista">aaa</a>
+				<a id="listb" class="listb">bbb</a>
+			</div>
+		</div>
+		<div id="rela" class="rela">
+
+		</div>
+	</div>
+
+	<script type="text/javascript">
+		let listshow = false
+		const panels = [{
+			width: 50,
+			height: 50,
+			left:  10,
+			top: 20,
+		}, {
+			width: 70,
+			height: 20,
+			left: 60,
+			top: 50
+		}, {
+			width: 100,
+			height: 50,
+			left: 100,
+			top: 100,
+		}]
+
+		let currentHeight = 0
+
+		const list = document.getElementById('list')
+
+		document.getElementById('trig').addEventListener('click', function(ev) {
+			if(listshow === false){
+				list.style.display = 'block'
+				listshow = true
+			} else {
+				list.style.display = 'none'
+				listshow = false
+			}
+		})
+
+		document.onreadystatechange = function() {
+			if(document.readyState === 'complete') {
+				panels.forEach(ele => {
+					createunit(ele.width, ele.height, ele.left, ele.top)
+				})
+				updateHeight()
+			}
+		}
+
+		function updateHeight() {
+			const rela = document.getElementById('rela')
+			const children = rela.children
+			let maxHeight = 0;
+			for(let i = 0;i < children.length; i++) {
+				const { offsetTop, offsetHeight } = children[i]
+				if((offsetTop + offsetHeight) > maxHeight) maxHeight = offsetTop + offsetHeight
+			}
+			document.getElementById('rela').style.height = maxHeight + 'px'
+			return maxHeight
+		}
+
+		function createunit(width, height, left, top) {
+			const rela = document.getElementById('rela')
+			const unit = document.createElement('div')
+			rela.appendChild(unit)
+			unit.style.background = `rgb(${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)})`
+			unit.style.width = width + 'px'
+			unit.style.height = height + 'px'
+			unit.style.top = top + 'px'
+			unit.style.left = left + 'px'
+			unit.style.position = 'absolute'
+
+			unit.__proto__.customResize = function(original, widthChange, heightChange, leftChange, topChange) {
+				const { offsetTop, offsetLeft, offsetWidth, offsetHeight } = original
+				const minWidth = 10
+				const minHeight = 10
+				if(widthChange && leftChange && (offsetWidth + widthChange) >= minWidth) {
+					this.style.width = offsetWidth + widthChange + 'px'
+					this.style.left = offsetLeft + leftChange + 'px'
+					if((offsetLeft + leftChange) < 0) {
+						this.style.left = 0
+						this.style.width = offsetLeft + offsetWidth + 'px'
+					}
+				}
+				if(widthChange && !leftChange && (offsetWidth + widthChange) >= minWidth) {
+					this.style.width = offsetWidth + widthChange + 'px'
+					this.style.left = offsetLeft + leftChange + 'px'
+					if((offsetWidth + widthChange + offsetLeft) > rela.offsetWidth ) {
+						this.style.width = rela.offsetWidth - offsetLeft + 'px'
+					}
+				}
+				if(heightChange && topChange && (offsetHeight + heightChange) >= minHeight) {
+						this.style.height = offsetHeight + heightChange + 'px'
+						this.style.top = offsetTop + topChange + 'px'
+						if((offsetTop + topChange) < 0) {
+							this.style.top = 0
+							this.style.height = offsetTop + offsetHeight + 'px'
+						}
+				}
+				if(heightChange && !topChange && (offsetHeight + heightChange) >= minHeight) {
+					//  && (offsetHeight + topChange + offsetTop) <= rela.offsetHeight
+					this.style.height = offsetHeight + heightChange + 'px'
+					this.style.top = offsetTop + topChange + 'px'
+				}
+				updateHeight()
+			}
+
+		// 需要再创建一个容器放absolute的缩放点
+		const pointsContainer = document.createElement('div')
+		pointsContainer.style.position = 'relative'
+		pointsContainer.style.width = '100%'
+		pointsContainer.style.height = '100%'
+		createZoomPoint(unit, pointsContainer)
+
+		unit.appendChild(pointsContainer)
+
+
+			unit.addEventListener('mousedown', function(ev) {
+				bindDownMove(unit)
+			})
+			return unit
+		}
+
+		function ZoomPoint(point) {
+			this.point = point
+			this.setStyle = function(style) {
+				Object.keys(style).forEach(key => {
+					this.point.style[key] = style[key]
+				})
+				return this
+			}
+			this.onmousedown = function(func) {
+				this.point.addEventListener('mousedown', func)
+			}
+
+		}
+
+		function createZoomPoint(unit, pointsContainer) {
+			let pointBasicStyle = {
+				position: 'absolute',
+				width: '8px',
+				height: '8px',
+				'border-radius': '20px',
+				'box-sizing': 'border-box',
+				'box-shadow': '1px 1px 0 #ccc, -1px 1px 0 #ccc, 1px -1px 0 #ccc, -1px -1px 0 #ccc',
+				background: '#0023cc'
+			}
+
+			const zoomPoints = [{
+				type: 'topleft',
+				ownstyle: {
+					top: '-4px',
+					left: '-4px',
+					cursor: 'nw-resize'
+				},
+				resizemode: [-1, -1, 1, 1]
+			}, {
+				type: 'topmiddle',
+				ownstyle: {
+					top: '-4px',
+					left: 'calc(50% - 4px)',
+					cursor: 'n-resize'
+				},
+				resizemode: [0, -1, 0, 1]
+			}, {
+				type: 'topright',
+				ownstyle: {
+					top: '-4px',
+					right: '-4px',
+					cursor: 'ne-resize'
+				},
+				resizemode: [1, -1, 0, 1]
+			}, {
+				type: 'leftmiddle',
+				ownstyle: {
+					left: '-4px',
+					top: 'calc(50% - 4px)',
+					cursor: 'w-resize'
+				},
+				resizemode: [-1, 0, 1, 0]
+			}, {
+				type: 'leftbottom',
+				ownstyle: {
+					left: '-4px',
+					bottom: '-4px',
+					cursor: 'sw-resize'
+				},
+				resizemode: [-1, 1, 1, 0]
+			}, {
+				type: 'rightmiddle',
+				ownstyle: {
+					right: '-4px',
+					top: 'calc(50% - 4px)',
+					cursor: 'e-resize'
+				},
+				resizemode: [1, 0, 0, 0]
+			}, {
+				type: 'rightbottom',
+				ownstyle: {
+					right: '-4px',
+					bottom: '-4px',
+					cursor: 'se-resize'
+				},
+				resizemode: [1, 1, 0, 0]
+			},  {
+				type: 'bottommiddle',
+				ownstyle: {
+					bottom: '-4px',
+					left: 'calc(50% - 4px)',
+					cursor: 's-resize'
+				},
+				resizemode: [0, 1, 0, 0]
+			}, ]
+
+			zoomPoints.forEach(point => {
+				const zoomPoint = new ZoomPoint(document.createElement('div')).setStyle(pointBasicStyle).setStyle(point.ownstyle)
+				zoomPoint.onmousedown(function(ev) {
+					clearEv(ev)
+					const downPageX = ev.pageX
+					const downPageY = ev.pageY
+					const { offsetTop, offsetLeft, offsetWidth, offsetHeight } = unit
+					document.onmousemove = function(ev) {
+						clearEv(ev)
+						const { pageX, pageY } = ev
+						unit.customResize({ offsetTop, offsetLeft, offsetWidth, offsetHeight }, (pageX - downPageX) * point.resizemode[0], (pageY - downPageY) * point.resizemode[1], (pageX - downPageX) * point.resizemode[2], (pageY - downPageY) * point.resizemode[3])
+					}
+					document.onmouseup = function(ev) {
+						document.onmousemove = null
+					}
+				})
+
+				pointsContainer.appendChild(zoomPoint.point)
+			})
+
+		}
+
+		function bindDownMove(inUnit = null) {
+			function downmousemove(ev) {
+				clearEv(ev)
+				list.style.display = 'none'
+				listshow = false
+				updatepos(ev, inUnit)
+			}
+		document.onmousemove = 	downmousemove
+		// _.throttle(downmousemove, 50)
+
+			document.onmouseup = function(ev) {
+				document.onmousemove = null;
+				unit = null;
+			}
+		}
+
+		let unit;
+		let chartInitHeight = 100 ;
+		let chartInitWidth = 100;
+		function updatepos(ev, inUnit = null) {
+			const { pageX, pageY } = ev // 鼠标位置
+			const rela = document.getElementById('rela')
+			const { offsetLeft, offsetTop, offsetWidth, scrollTop, scrollLeft } = rela
+			// let documentScrollTop = document.documentElement.scrollTop | document.body.scrollTop
+			// let documentScrollLeft = document.documentElement.scrollLeft | document.body.scrollLeft
+			const left = offsetLeft
+			const top = offsetTop
+			const width = inUnit? inUnit.offsetWidth: chartInitWidth
+			const height = inUnit? inUnit.offsetHeight: chartInitHeight
+			//相对位置
+			let realtiveOffsetTop;
+			let relativeOffsetLeft;
+			if((pageY - top) > height / 2) {
+				realtiveOffsetTop = (pageY - top) - height / 2
+			} else {
+				realtiveOffsetTop = 0
+			}
+			if((pageX - left) > width / 2) {
+				if((pageX - left + width / 2) < offsetWidth) {
+					relativeOffsetLeft = (pageX - left) - width / 2
+				} else {
+					relativeOffsetLeft = offsetWidth - width
+				}
+
+			} else {
+				relativeOffsetLeft = 0
+			}
+			if(!unit && !inUnit) {
+				unit = createunit(width, height, relativeOffsetLeft, realtiveOffsetTop)
+			} else if(unit) {
+				unit.style.left = relativeOffsetLeft + 'px'
+				unit.style.top = realtiveOffsetTop + 'px'
+			} else if(inUnit) {
+				inUnit.style.left = relativeOffsetLeft + 'px'
+				inUnit.style.top = realtiveOffsetTop + 'px'
+			}
+			currentHeight = updateHeight()
+
+		}
+
+		function clearEv(ev) {
+			var oEvent=ev||event;
+		    if (oEvent.preventDefault) oEvent.preventDefault();
+
+				if(oEvent.stopPropagation) event.stopPropagation()
+oEvent.returnValue=false;
+				oEvent.cancelBubble=true;
+
+		}
+
+document.getElementById('lista').addEventListener('mousedown', function(ev) {
+	clearEv(ev)
+			bindDownMove()
+})
+
+document.getElementById('listb').addEventListener('mousedown', function(ev) {
+	clearEv(ev)
+			bindDownMove()
+})
+	</script>
+</body>
+</html>
