@@ -66,7 +66,7 @@
 </head>
 
 <body>
-	<div class="container">
+	<div id="container" class="container">
 		<div class="head">
 			<div>
 				<a id="trig">trigg</a>
@@ -103,10 +103,8 @@
 			top: 100,
 		}]
 
-		let currentHeight = 0
-
 		const list = document.getElementById('list')
-
+		const container = document.getElementById("container")
 		document.getElementById('trig').addEventListener('click', function(ev) {
 			if (listshow === false) {
 				list.style.display = 'block'
@@ -152,7 +150,6 @@
 			unit.style.left = left + 'px'
 			unit.style.position = 'absolute'
 
-
 			unit.__proto__.customResize = function(original, widthChange, heightChange, leftChange, topChange) {
 				const {
 					offsetTop,
@@ -186,7 +183,6 @@
 					}
 				}
 				if (heightChange && !topChange && (offsetHeight + heightChange) >= minHeight) {
-					//  && (offsetHeight + topChange + offsetTop) <= rela.offsetHeight
 					this.style.height = offsetHeight + heightChange + 'px'
 					this.style.top = offsetTop + topChange + 'px'
 				}
@@ -203,13 +199,9 @@
 
 			unit.appendChild(pointsContainer)
 
-			// unit.addEventListener('click', function(ev) {
-			// 	unitActive(unit)
-			// })
-
 			unit.addEventListener('mousedown', function(ev) {
 				unitActive(unit)
-				bindDownMove(unit)
+				bindDownMove(ev, unit)
 			})
 
 			unitActive(unit)
@@ -353,12 +345,22 @@
 
 		}
 
-		function bindDownMove(inUnit = null) {
+		function bindDownMove(ev, inUnit = null) {
+			const offsetTop = inUnit ? inUnit.offsetTop : 0
+			const offsetLeft = inUnit ? inUnit.offsetLeft : 0
+			const pageX = ev.pageX
+			const pageY = ev.pageY
+
 			function downmousemove(ev) {
 				clearEv(ev)
 				list.style.display = 'none'
 				listshow = false
-				updatepos(ev, inUnit)
+				updatepos({
+					offsetTop,
+					offsetLeft,
+					pageX,
+					pageY
+				}, ev, inUnit)
 			}
 			let isthrottle = false // 是否节流
 			document.onmousemove = isthrottle ? _.throttle(downmousemove, 50) : downmousemove
@@ -373,42 +375,37 @@
 		let chartInitHeight = 100;
 		let chartInitWidth = 100;
 
-		function updatepos(ev, inUnit = null) {
-			const {
-				pageX,
-				pageY
-			} = ev // 鼠标位置
-			const rela = document.getElementById('rela')
+		function updatepos(ori_option, ev, inUnit = null) {
+			const xChange = ev.pageX - ori_option.pageX
+			const yChange = ev.pageY - ori_option.pageY
+			const rela = document.getElementById('rela');
 			const {
 				offsetLeft,
 				offsetTop,
-				offsetWidth,
-				scrollTop,
-				scrollLeft
-			} = rela
-			// let documentScrollTop = document.documentElement.scrollTop | document.body.scrollTop
-			// let documentScrollLeft = document.documentElement.scrollLeft | document.body.scrollLeft
-			const left = offsetLeft
-			const top = offsetTop
-			const width = inUnit ? inUnit.offsetWidth : chartInitWidth
-			const height = inUnit ? inUnit.offsetHeight : chartInitHeight
-			//相对位置
+				offsetWidth
+			} = rela;
+			const width = inUnit ? inUnit.offsetWidth : chartInitWidth;
+			const height = inUnit ? inUnit.offsetHeight : chartInitHeight;
+			const unitTop = inUnit ? ori_option.offsetTop : (-chartInitHeight / 2 + ori_option.pageY - offsetTop)
+			const unitLeft = inUnit ? ori_option.offsetLeft : (-chartInitWidth / 2 + ori_option.pageX - offsetLeft)
+
+			// 相对位置
 			let realtiveOffsetTop;
 			let relativeOffsetLeft;
-			if ((pageY - top) > height / 2) {
-				realtiveOffsetTop = Math.round((pageY - top) / ystep) * ystep - height / 2
-			} else {
-				realtiveOffsetTop = 0
-			}
-			if ((pageX - left) > width / 2) {
-				if ((pageX - left + width / 2) < offsetWidth) {
-					relativeOffsetLeft = Math.round((pageX - left) / xstep) * xstep - width / 2
-				} else {
-					relativeOffsetLeft = offsetWidth - width
-				}
 
+			if ((unitTop + yChange) >= 0) {
+				realtiveOffsetTop = unitTop + yChange
 			} else {
-				relativeOffsetLeft = 0
+				realtiveOffsetTop = 0;
+			}
+			if ((unitLeft + xChange) >= 0) {
+				if ((unitLeft + xChange + width) <= offsetWidth) {
+					relativeOffsetLeft = unitLeft + xChange
+				} else {
+					relativeOffsetLeft = offsetWidth - width;
+				}
+			} else {
+				relativeOffsetLeft = 0;
 			}
 			if (!unit && !inUnit) {
 				unit = createunit(width, height, relativeOffsetLeft, realtiveOffsetTop)
@@ -419,28 +416,25 @@
 				inUnit.style.left = relativeOffsetLeft + 'px'
 				inUnit.style.top = realtiveOffsetTop + 'px'
 			}
-			currentHeight = updateHeight()
-
+			updateHeight()
 		}
 
 		function clearEv(ev) {
 			var oEvent = ev || event;
 			if (oEvent.preventDefault) oEvent.preventDefault();
-
 			if (oEvent.stopPropagation) oEvent.stopPropagation()
 			oEvent.returnValue = false;
 			oEvent.cancelBubble = true;
-
 		}
 
 		document.getElementById('lista').addEventListener('mousedown', function(ev) {
 			clearEv(ev)
-			bindDownMove()
+			bindDownMove(ev)
 		})
 
 		document.getElementById('listb').addEventListener('mousedown', function(ev) {
 			clearEv(ev)
-			bindDownMove()
+			bindDownMove(ev)
 		})
 	</script>
 </body>

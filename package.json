@@ -1,0 +1,31 @@
+{
+  "name": "drag-demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "\u001b[A\u001b[A\u001b[A\u001b[C\u001b[B\u001b[B\u001b[B",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "webpack --mode development",
+    "build": "webpack --mode production"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yinyangshibolange/drag-demo.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yinyangshibolange/drag-demo/issues"
+  },
+  "homepage": "https://github.com/yinyangshibolange/drag-demo#readme",
+  "devDependencies": {
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.9.0",
+    "@babel/preset-env": "^7.9.0",
+    "babel-loader": "^8.1.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-es2015": "^6.24.1",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11"
+  }
+}

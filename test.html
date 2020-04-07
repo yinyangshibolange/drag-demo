@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans">
+
+<head>
+	<meta charset="utf-8">
+	<title>drag-demo</title>
+	<script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js" integrity="sha256-VeNaFBVDhoX3H+gJ37DpT/nTuZTdjYro9yBruHjVmoQ=" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="./drag.js"></script>
+  <script type="text/javascript" src="./scale.js"></script>
+
+	<style>
+		.head {
+			position: relative;
+			height: 50px;
+			border: 1px solid #bebdbd;
+			box-sizing: border-box;
+		}
+
+		.head .list {
+			position: absolute;
+			display: none;
+			top: 50px;
+			z-index: 3;
+			background: #fff;
+		}
+
+		.head .list>a {
+			display: block;
+			padding: 10px;
+		}
+
+		.rela {
+			position: relative;
+			background: #e08282;
+			box-shadow: 2px 2px 0 #ccc, -2px 2px 0 #ccc, 2px -2px 0 #ccc, -2px -2px 0 #ccc;
+			box-sizing: border-box;
+		}
+
+		.rela .panel {
+			position: absolute;
+		}
+
+		.rela .pan-chart {
+			position: absolute;
+			width: 120px;
+			height: 80px;
+		}
+
+		.lista {
+			display: inline-block;
+		}
+
+		.listb {
+			display: inline-block;
+			margin-left: 100px;
+		}
+
+		.clearfix::after {
+			content: '\20';
+			clear: both;
+			height: 0;
+			display: block;
+		}
+
+		.clearfix {
+			zoom: 1;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="container">
+		<div class="head">
+			<div>
+				<a id="trig">trigg</a>
+			</div>
+			<div id="list" class="list clearfix">
+				<a id="lista" class="lista">aaa</a>
+				<a id="listb" class="listb">bbb</a>
+			</div>
+		</div>
+		<div id="rela" class="rela">
+
+		</div>
+	</div>
+
+	<script type="text/javascript">
+    document.getElementById("trig").addEventListener('click', function(ev) {
+      document.getElementById("list").style.display = 'block'
+    })
+
+    document.getElementById("lista").addEventListener("mousedown", function(ev) {
+      const ele = document.createElement('div')
+      ele.style.width = '100px'
+      ele.style.height = '100px'
+      ele.style.top = '0'
+      ele.style.left = '0'
+      ele.style.position = 'absolute'
+      ele.style.background = 'blue'
+      document.getElementById("rela").appendChild(ele)
+      drag.init(ele)
+      scale.init(ele)
+      ele.addEventListener('mousedown', function(ev) {
+        scale.unitActive(ele)
+        drag.bindDownMove(ev, ele)
+      })
+      drag.bindDownMove(ev, ele, function() {
+        scale.unitActive(ele)
+        document.getElementById("list").style.display = 'none'
+      })
+    })
+	</script>
+</body>
+
+</html>
