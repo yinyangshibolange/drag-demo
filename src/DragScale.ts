@@ -1,11 +1,10 @@
-import { Injectable } from '@angular/core';
-
-@Injectable({ providedIn: 'root' })
 export class DragScale {
   rela;
   dom;
   xstep = 5; // 移动和缩放的横向方向上的步长
   ystep = 5; // 移动和缩放的竖直方向上的步长
+
+  ele_para;
 
   bindparas;
 
@@ -13,23 +12,31 @@ export class DragScale {
   chartInitHeight = 100;
   chartInitWidth = 100;
 
+  borders = [];
+
   constructor(dom) {
     this.rela = dom.parentNode;
     this.dom = dom;
+    // dom.style.position = 'relative'
   }
 
   init() {
     this.draginit();
     this.scaleinit();
+    // this.bindp = bindp;
   }
 
-  bindparams(bindparas: any[]) {
-    // 绑定外部属性，用以修改left, top, width, height 属性，以数组的形式
-    this.bindparas = bindparas
+  remove() {
+    this.rela.removeChild(this.dom);
+  }
+
+  bindparams(bindparas) {
+    this.bindparas = bindparas;
   }
 
   draginit() {
     // 将dom转化为可拖拽的dom， 需要获取父级容器参数，父计容器只有，只向上寻找一级
+    // rela = dom.parentNode
     this.updateHeight();
   }
 
@@ -46,10 +53,65 @@ export class DragScale {
       self.updateHeight();
     };
 
+    // const pointsContainer = document.createElement('div');
+    // pointsContainer.style.position = 'relative';
+    // pointsContainer.style.width = '100%';
+    // pointsContainer.style.height = '100%';
+    // // pointsContainer.style.display = 'none';
+    // pointsContainer.style.float = 'left'
+    // pointsContainer.style.top = '0'
+    // pointsContainer.style.left = '0'
     self.createZoomPoint(dom);
+
+    dom.__proto__.isActive = false;
+    dom.__proto__.hoverBorder = function() {
+      if (this.isActive) return;
+      self.domDisplay(this.children, 'cus-border', null).forEach(elem => {
+        this.removeChild(elem);
+      });
+      self.createBorderContainer(this, 'dashed');
+    };
+    dom.__proto__.hideBorder = function() {
+      if (this.isActive) return;
+      self.domDisplay(this.children, 'cus-border', null).forEach(elem => {
+        this.removeChild(elem);
+      });
+    };
+    dom.__proto__.activeBorder = function() {
+      this.isActive = true;
+      self.domDisplay(this.children, 'cus-border', null).forEach(elem => {
+        this.removeChild(elem);
+      });
+      self.createBorderContainer(this, 'solid');
+    };
+    dom.__proto__.unActiveBorder = function() {
+      this.isActive = false;
+      self.domDisplay(this.children, 'cus-border', null).forEach(elem => {
+        this.removeChild(elem);
+      });
+    };
+
+    dom.addEventListener('mouseover', function(ev) {
+      console.log('hover')
+      console.log(ev)
+      console.log(this.isActive)
+      this.hoverBorder();
+    });
+
+    dom.addEventListener('mouseout', function(ev) {
+      this.hideBorder();
+    });
+
+    // dom.appendChild(pointsContainer);
+    // self.unitActive(dom);
+
+    // return pointsContainer
   }
 
   updateHeight() {
+    if (!this.rela) {
+      return 0;
+    }
     const children = this.rela.children;
     let maxHeight = 0;
     for (let i = 0; i < children.length; i++) {
@@ -92,7 +154,6 @@ export class DragScale {
   }
 
   updatepos(ori_option, ev, inUnit = null) {
-
     const xChange = ev.pageX - ori_option.pageX;
     const yChange = ev.pageY - ori_option.pageY;
     const { offsetLeft, offsetTop, offsetWidth } = this.rela;
@@ -124,32 +185,103 @@ export class DragScale {
       relativeOffsetLeft = 0;
     }
     if (inUnit) {
-      if(this.bindparas && this.bindparas.length > 0) {
+      if (this.bindparas && this.bindparas.length > 0) {
         this.bindparas.forEach(para => {
-          para.left = relativeOffsetLeft
-          para.top = realtiveOffsetTop
-        })
+          para.left = relativeOffsetLeft;
+          para.top = realtiveOffsetTop;
+        });
+        // this.bindp.left = relativeOffsetLeft
+        // this.bindp.top = realtiveOffsetTop
       }
-        inUnit.style.left = relativeOffsetLeft + 'px';
-        inUnit.style.top = realtiveOffsetTop + 'px';
-
+      inUnit.style.left = relativeOffsetLeft + 'px';
+      inUnit.style.top = realtiveOffsetTop + 'px';
     }
 
     this.updateHeight();
   }
 
-  unitActive(unit) {
-    function zoomPointsDisplay(children, className, val) {
-      for (let i = 0; i < children.length; i++) {
-        const elem = children[i];
-        if (elem.className.indexOf(className) > -1) elem.style.display = val;
+  domDisplay(children, className, cb): any[] {
+    const doms = [];
+    for (let i = 0; i < children.length; i++) {
+      const elem = children[i];
+      if (elem.className.indexOf(className) > -1) {
+        doms.push(elem);
+        if (cb) cb(elem);
       }
     }
+    return doms;
+  }
+
+  unitActive(unit) {
+    if (!unit.parentNode) return;
     for (let i = 0; i < unit.parentNode.children.length; i++) {
       const ele = unit.parentNode.children[i];
-      zoomPointsDisplay(ele.children, 'zoompoint', 'none');
+      this.domDisplay(ele.children, 'zoompoint', function(elem) {
+        elem.style.display = 'none';
+      });
+      ele.unActiveBorder();
     }
-    zoomPointsDisplay(unit.children, 'zoompoint', 'block');
+    this.domDisplay(unit.children, 'zoompoint', function(elem) {
+      elem.style.display = 'block';
+    });
+    unit.activeBorder();
+  }
+
+  createBorderContainer(unit, type) {
+    const border = `1.5px ${type} rgb(64, 169, 255)`;
+    const containers = [
+      {
+        style: {
+          width: '100%',
+          height: '0',
+          top: '-1.5px',
+          left: '0',
+          'border-bottom': border,
+        },
+        className: 'cus-border-top',
+      },
+      {
+        style: {
+          width: '0',
+          height: '100%',
+          top: '0',
+          left: '-1.5px',
+          'border-right': border,
+        },
+        className: 'cus-border-left',
+      },
+      {
+        style: {
+          width: '100%',
+          height: '0',
+          bottom: '-1.5px',
+          left: '0',
+          'border-top': border,
+        },
+        className: 'cus-border-bottom',
+      },
+      {
+        style: {
+          width: '0',
+          height: '100%',
+          top: '0',
+          right: '-1.5px',
+          'border-left': border,
+        },
+        className: 'cus-border-right',
+      },
+    ];
+    const borders = containers.map(ele => {
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.classList.add(ele.className);
+      Object.keys(ele.style).forEach(key => {
+        container.style[key] = ele.style[key];
+      });
+      unit.appendChild(container);
+      return container;
+    });
+    this.borders = borders;
   }
 
   createZoomPoint(unit) {
@@ -179,6 +311,7 @@ export class DragScale {
       'box-shadow':
         '1px 1px 0 #ccc, -1px 1px 0 #ccc, 1px -1px 0 #ccc, -1px -1px 0 #ccc',
       background: '#0023cc',
+      display: 'none',
     };
 
     const zoomPoints = [
@@ -338,18 +471,18 @@ export class DragScale {
               if (top !== undefined) para.top = top;
               if (width !== undefined) para.width = width;
               if (height !== undefined) para.height = height;
-            })
+            });
 
             this.updateHeight();
           }
-            unit.customResize({ left, top, width, height });
-
+          unit.customResize({ left, top, width, height });
         };
         document.onmouseup = ev => {
           document.onmousemove = null;
         };
       });
 
+      // pointsContainer.appendChild(zoomPoint.point);
       unit.appendChild(zoomPoint.point);
     });
   }
