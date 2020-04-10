@@ -1,5 +1,6 @@
 ### 使用方式
 Angular使用方法：
+```javascript
 createDragScaleUnit(ele_para) {
     const keys = this.keys;
     const configChartUnit = this.unit.createComponent(
@@ -27,3 +28,4 @@ createDragScaleUnit(ele_para) {
     });
     return { dragscale, configchartunit: configChartUnit };
   }
+```
