@@ -17,13 +17,13 @@ export class DragScale {
   constructor(dom) {
     this.rela = dom.parentNode;
     this.dom = dom;
-    // dom.style.position = 'relative'
+    this.rela.style.position = 'relative'
+    dom.style.position = 'absolute'
   }
 
   init() {
     this.draginit();
     this.scaleinit();
-    // this.bindp = bindp;
   }
 
   remove() {
@@ -36,12 +36,10 @@ export class DragScale {
 
   draginit() {
     // 将dom转化为可拖拽的dom， 需要获取父级容器参数，父计容器只有，只向上寻找一级
-    // rela = dom.parentNode
     this.updateHeight();
   }
 
   scaleinit() {
-    // rela = dom.parentNode
     const dom = this.dom;
     const self = this;
     dom.__proto__.customResize = function(newSize: any) {
@@ -53,16 +51,10 @@ export class DragScale {
       self.updateHeight();
     };
 
-    // const pointsContainer = document.createElement('div');
-    // pointsContainer.style.position = 'relative';
-    // pointsContainer.style.width = '100%';
-    // pointsContainer.style.height = '100%';
-    // // pointsContainer.style.display = 'none';
-    // pointsContainer.style.float = 'left'
-    // pointsContainer.style.top = '0'
-    // pointsContainer.style.left = '0'
+
     self.createZoomPoint(dom);
 
+    // 为了便利,决定污染dom对象原型
     dom.__proto__.isActive = false;
     dom.__proto__.hoverBorder = function() {
       if (this.isActive) return;
@@ -92,9 +84,6 @@ export class DragScale {
     };
 
     dom.addEventListener('mouseover', function(ev) {
-      console.log('hover')
-      console.log(ev)
-      console.log(this.isActive)
       this.hoverBorder();
     });
 
@@ -102,10 +91,6 @@ export class DragScale {
       this.hideBorder();
     });
 
-    // dom.appendChild(pointsContainer);
-    // self.unitActive(dom);
-
-    // return pointsContainer
   }
 
   updateHeight() {
@@ -129,10 +114,6 @@ export class DragScale {
     const pageX = ev.pageX;
     const pageY = ev.pageY;
 
-    // const self = this
-    // function downmousemove(ev) {
-
-    // }
     document.onmousemove = ev => {
       this.clearEv(ev);
       this.updatepos(
@@ -190,8 +171,6 @@ export class DragScale {
           para.left = relativeOffsetLeft;
           para.top = realtiveOffsetTop;
         });
-        // this.bindp.left = relativeOffsetLeft
-        // this.bindp.top = realtiveOffsetTop
       }
       inUnit.style.left = relativeOffsetLeft + 'px';
       inUnit.style.top = realtiveOffsetTop + 'px';
@@ -312,6 +291,7 @@ export class DragScale {
         '1px 1px 0 #ccc, -1px 1px 0 #ccc, 1px -1px 0 #ccc, -1px -1px 0 #ccc',
       background: '#0023cc',
       display: 'none',
+      "z-index": "999"
     };
 
     const zoomPoints = [
@@ -482,7 +462,6 @@ export class DragScale {
         };
       });
 
-      // pointsContainer.appendChild(zoomPoint.point);
       unit.appendChild(zoomPoint.point);
     });
   }
