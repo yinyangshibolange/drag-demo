@@ -13,12 +13,13 @@ export class DragScale {
   chartInitWidth = 100;
 
   borders = [];
+  cornors = [];
 
   constructor(dom) {
     this.rela = dom.parentNode;
     this.dom = dom;
-    this.rela.style.position = 'relative'
-    dom.style.position = 'absolute'
+    this.rela.style.position = 'relative';
+    dom.style.position = 'absolute';
   }
 
   init() {
@@ -51,8 +52,8 @@ export class DragScale {
       self.updateHeight();
     };
 
-
     self.createZoomPoint(dom);
+    self.createCornors(dom)
 
     // 为了便利,决定污染dom对象原型
     dom.__proto__.isActive = false;
@@ -68,6 +69,7 @@ export class DragScale {
       self.domDisplay(this.children, 'cus-border', null).forEach(elem => {
         this.removeChild(elem);
       });
+      // self.createCornors(dom)
     };
     dom.__proto__.activeBorder = function() {
       this.isActive = true;
@@ -81,6 +83,7 @@ export class DragScale {
       self.domDisplay(this.children, 'cus-border', null).forEach(elem => {
         this.removeChild(elem);
       });
+      // self.createCornors(dom)
     };
 
     dom.addEventListener('mouseover', function(ev) {
@@ -90,7 +93,6 @@ export class DragScale {
     dom.addEventListener('mouseout', function(ev) {
       this.hideBorder();
     });
-
   }
 
   updateHeight() {
@@ -181,12 +183,17 @@ export class DragScale {
 
   domDisplay(children, className, cb): any[] {
     const doms = [];
+
+    const classes = className.split(',')
     for (let i = 0; i < children.length; i++) {
       const elem = children[i];
-      if (elem.className.indexOf(className) > -1) {
-        doms.push(elem);
-        if (cb) cb(elem);
-      }
+      classes.forEach(classn => {
+        if (elem.className.indexOf(classn) > -1) {
+          doms.push(elem);
+          if (cb) cb(elem);
+        }
+      })
+
     }
     return doms;
   }
@@ -263,6 +270,50 @@ export class DragScale {
     this.borders = borders;
   }
 
+  createCornors(unit) {
+    const styles = [
+      {
+        left: 0,
+        top: 0,
+        'border-right-width': '0',
+        'border-bottom-width': '0',
+      },
+      {
+        right: 0,
+        top: 0,
+        'border-bottom-width': '0',
+        'border-left-width': '0',
+      },
+      {
+        bottom: 0,
+        right: 0,
+        'border-left-width': '0',
+        'border-top-width': '0',
+      },
+      {
+        bottom: 0,
+        left: 0,
+        'border-top-width': '0',
+        'border-right-width': '0',
+      },
+    ];
+    this.cornors = styles.map(style => {
+      const dom = document.createElement('div');
+      dom.classList.add('cornor');
+      dom.style.position = 'absolute';
+      dom.style.borderColor = 'rgb(64, 169, 255)'
+      dom.style.borderStyle = 'solid'
+      dom.style.width = '10px'
+      dom.style.height = '10px'
+      dom.style.borderWidth = '1.5px'
+      Object.keys(style).forEach(key => {
+        dom.style[key] = style[key];
+      });
+      unit.appendChild(dom);
+      return dom;
+    });
+  }
+
   createZoomPoint(unit) {
     function ZoomPoint(point) {
       // 懒得写class了
@@ -291,7 +342,7 @@ export class DragScale {
         '1px 1px 0 #ccc, -1px 1px 0 #ccc, 1px -1px 0 #ccc, -1px -1px 0 #ccc',
       background: '#0023cc',
       display: 'none',
-      "z-index": "999"
+      'z-index': '10',
     };
 
     const zoomPoints = [
